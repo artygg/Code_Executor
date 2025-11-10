@@ -54,17 +54,30 @@ type Execution struct {
 	UserID     string
 }
 
-func NewExecution(id, language, code, stdin string, timeoutMs int, userID string, createdAt time.Time) (*Execution, error) {
-	if id == "" || language == "" || code == "" || userID == "" || createdAt.IsZero() {
+func NewExecution(id, languageName, code, stdin string, timeoutMs int, userID string, createdAt time.Time) (*Execution, error) {
+	if id == "" || languageName == "" || code == "" || userID == "" || createdAt.IsZero() {
 		return nil, fmt.Errorf("%w: missing required fields", ErrInvalidExecution)
 	}
 	if timeoutMs <= 0 {
 		return nil, fmt.Errorf("%w: timeout must be positive", ErrInvalidExecution)
 	}
+	language, languageExists := GetLanguage(languageName)
+
+	if !languageExists {
+		return nil, fmt.Errorf("%w: language \"%s\" is not supported", ErrInvalidExecution, languageName)
+	}
+
+	if language.MaxCodeSize != nil && len(code) > *language.MaxCodeSize {
+		return nil, fmt.Errorf("%w: code size exceeds max limit for %s", ErrInvalidExecution, languageName)
+	}
+
+	if language.MaxTimeoutMs != nil && timeoutMs > *language.MaxTimeoutMs {
+		return nil, fmt.Errorf("%w: timeout exceeds max limit for %s", ErrInvalidExecution, languageName)
+	}
 
 	execution := &Execution{
 		ID:        id,
-		Language:  language,
+		Language:  languageName,
 		Code:      code,
 		Stdin:     stdin,
 		TimeoutMs: timeoutMs,
@@ -149,14 +162,4 @@ func (e *Execution) transition(newStatus ExecutionStatus) error {
 
 	e.Status = newStatus
 	return nil
-}
-
-func timePtr(t time.Time) *time.Time {
-	tt := t.UTC()
-	return &tt
-}
-
-func intPtr(v int) *int {
-	val := v
-	return &val
 }

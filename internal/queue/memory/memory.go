@@ -1,10 +1,11 @@
-package memory
+package queuememory
 
 import (
 	"Code_executor/internal/queue"
 	"context"
 	"errors"
 	"fmt"
+	"log"
 )
 
 type InMemoryQueue struct {
@@ -23,12 +24,14 @@ func NewInMemoryQueue(buffer int) (*InMemoryQueue, error) {
 }
 
 func (q *InMemoryQueue) Enqueue(ctx context.Context, job queue.Job) error {
+
 	if job.ExecutionID == "" {
 		return fmt.Errorf("execution id is empty")
 	}
 
 	select {
 	case <-ctx.Done():
+		log.Printf("enqueue cancelled: %v", ctx.Err())
 		return ctx.Err()
 	case q.ch <- job:
 		return nil

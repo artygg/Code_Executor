@@ -100,7 +100,7 @@ func (s *executionService) CreateExecutionAndEnqueue(ctx context.Context, params
 		UserID:      exec.UserID,
 	}
 
-	if err := s.producer.Enqueue(ctx, job); err != nil {
+	if err := s.producer.Enqueue(ctx, *job); err != nil {
 		return nil, err
 	}
 

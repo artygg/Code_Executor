@@ -9,7 +9,7 @@ type Job struct {
 }
 
 type Producer interface {
-	Enqueue(ctx context.Context, job *Job) error
+	Enqueue(ctx context.Context, job Job) error
 }
 
 type Consumer interface {
